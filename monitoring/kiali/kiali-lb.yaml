@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kiali-lb
+  namespace: istio-system
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+spec:
+  type: LoadBalancer
+  selector:
+    app: kiali
+  ports:
+    - name: http
+      port: 20001
+      targetPort: 20001

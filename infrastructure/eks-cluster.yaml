@@ -1,0 +1,20 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+metadata:
+  name: devops-ev3
+  region: us-east-1
+  version: "1.37"
+  tags:
+    Project: devops-ev3-observability
+iam:
+  withOIDC: false
+  serviceRoleARN: "__LAB_ROLE_ARN__"
+managedNodeGroups:
+  - name: ng-lab
+    instanceType: t3.medium
+    desiredCapacity: 2
+    minSize: 2
+    maxSize: 2
+    volumeSize: 20
+    iam:
+      instanceRoleARN: "__LAB_ROLE_ARN__"

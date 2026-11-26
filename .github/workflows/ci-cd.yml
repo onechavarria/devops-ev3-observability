@@ -1,0 +1,46 @@
+name: CI-CD | Observability
+on:
+  push:
+    branches: [main, development, 'feature/**']
+  pull_request:
+    branches: [main, development]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Deploy to existing EKS from a trusted self-hosted runner
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Install test dependencies
+        run: python -m pip install -r requirements-dev.txt coverage
+      - name: Validate manifests and shell syntax
+        run: |
+          python scripts/validate.py
+          for file in scripts/*.sh; do bash -n "$file"; done
+      - name: Tests and coverage
+        run: |
+          coverage run -m unittest discover -s tests -v
+          coverage xml
+          coverage report --fail-under=65
+      - name: Block untrusted fork deployments
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        run: exit 1
+  deploy:
+    needs: validate
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy && github.event.repository.private && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, linux, ev3-trusted]
+    environment: learner-lab
+    steps:
+      - uses: actions/checkout@v7
+      - run: python -m pip install -r requirements-dev.txt
+      - run: bash scripts/deploy.sh
+      - run: bash scripts/generate-traffic.sh 20
+      - run: cat .local/deployment-metrics.txt >> "$GITHUB_STEP_SUMMARY"
