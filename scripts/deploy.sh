@@ -25,3 +25,4 @@ k get pods -n "$NS" -o json | python -c 'import json,sys; pods=json.load(sys.std
 k get svc -n istio-system
 mkdir -p .local
 printf 'deployment_seconds %s\n' "$(( $(date +%s)-start ))" > .local/deployment-metrics.txt
+
